@@ -37,6 +37,10 @@ class FileData:
 
     zip = b"PK\x05\x06" + b"\x00" * 18
 
+    pdf_17 = b"%PDF-1.7\r\n%\xe2\xe3\xcf\xd3\r\n"
+
+    pdf_14 = b"%PDF-1.4\r\n%\xe2\xe3\xcf\xd3\r\n"
+
 
 class BaseFactory(DjangoModelFactory):
     created_by_user = "admin"

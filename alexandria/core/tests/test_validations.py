@@ -1,7 +1,9 @@
+import io
 import pytest
 from clamdpy.models import ScanResult
 
 from alexandria.core import validations
+from alexandria.core.factories import FileData
 
 
 def test_validate_mime_type(db, category_factory):
@@ -55,3 +57,11 @@ def test_validate_file_infection_infected(
     exc = exc_info.value.get_full_details()[0]
     assert exc["code"] == error_code
     assert exc["message"] == error_message
+
+
+def test_validate_pdf_version(db):
+    content = io.BytesIO(getattr(FileData, "pdf_17"))
+    content.name = "test.pdf"
+    content.content_type = "application/pdf"
+    min_version = "1.6"
+    assert validations.validate_pdf_version(content, min_version)

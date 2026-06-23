@@ -1,5 +1,7 @@
+import re
 import logging
 from mimetypes import guess_type
+from pypdf import PdfReader
 
 import magic
 from clamdpy import ClamdNetworkSocket
@@ -58,6 +60,23 @@ def validate_mime_type(mime_type, category):
     return True
 
 
+def validate_pdf_version(content, min_version):
+    # output of `pdf_header` starts with "%" followed by pdf version, e.g. "%PDF-1.7"
+    breakpoint()
+    pdf_version = PdfReader(content).pdf_header
+    match = re.search(r"%PDF-(\d+\.\d+)", pdf_version, re.IGNORECASE)
+
+    if not match:
+        raise ValidationError(gettext_lazy(f"Invalid PDF header: {pdf_version}"))
+
+    version_number = match.group(1)
+    if (version_number < min_version):
+        raise ValidationError(
+            gettext_lazy(f"PDF version {pdf_version} is not supported")
+        )
+    return True
+
+
 class AlexandriaValidator:
     @validator_for(File)
     def validate_file(self, data, context):
@@ -71,6 +90,11 @@ class AlexandriaValidator:
             raise ValidationError(gettext_lazy("Missing Content-Type header"))
         if not extension_type:
             raise ValidationError(gettext_lazy("Unknown file extension"))
+
+        # validate PDF version if minimum version is defined
+        min_version = settings.ALEXANDRIA_MIN_PDF_VERSION
+        if extension_type == "application/pdf" and min_version:
+            validate_pdf_version(data["content"], min_version)
 
         if content_type_header == "application/octet-stream":
             content_type_header = extension_type
